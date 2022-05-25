@@ -12,7 +12,7 @@ class User(db.Model):
         super(User, self).__init__(balance=balance)
 
     user_id = db.Column(db.Integer, primary_key=True)
-    user_name = db.Column(db.String(30))
+    user_name = db.Column(db.String(30), unique=True)
     email = db.Column(db.String(30))
     hashed_password = db.Column(db.String(128))
     balance = db.Column(db.Integer)

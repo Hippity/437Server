@@ -17,6 +17,12 @@ ma = Marshmallow(app)
 bcrypt = Bcrypt(app)
 
 from model.user import User, user_schema
+from model.manager import Manager, manager_schema
+from model.shops import Shops, shop_schema, shops_schema
+from model.shop_items import ShopItems, shop_item_schema, shop_items_schema
+from model.posted_items import PostedItem, posted_item_schema, posted_items_schema
+from model.transaction import Transaction, transaction_schema, transactions_schema
+from model.trading_ABC import TradingABC, trading_abc_schema, trading_abcs_schema
 
 
 def create_token(user_id):
@@ -61,8 +67,8 @@ def signUp():
     user_email = request.json["email"]
     password = request.json["password"]
     balance = 0
-    image = ""
-    new_user = User(user_id, user_name, user_email, password, balance)
+    role = 0
+    new_user = User(user_id, user_name, user_email, password, balance, role)
 
     db.session.add(new_user)
     db.session.commit()
@@ -110,6 +116,7 @@ def credentials():
 
     return jsonify(user_id=user_id, user_name=username, user_initial=username_initial, balance=userbalance)
 
+
 @app.route("/addcoins", methods=["PUT"])
 def addcoins():
     user_id = request.json["user_id"]
@@ -123,3 +130,80 @@ def addcoins():
         db.session.commit()
 
     return jsonify(user_schema.dump(user)), 200
+
+
+@app.route("/shops", methods=["GET"])
+def shops():
+    shops_all = Shops.query.all()
+    return jsonify(shops_schema.dump(shops_all)), 200
+
+
+@app.route("/shop_items", methods=["GET", "POST"])
+def shop_items():
+    shop_id = request.json["shop_id"]
+    shop_items_list = ShopItems.query.filter_by(shop_id=shop_id)
+    return jsonify(shop_items_schema.dump(shop_items_list))
+
+
+@app.route("/shop_item", methods=["GET", "POST"])
+def shop_item():
+    item_id = request.json["item_id"]
+    item = ShopItems.query.filter_by(item_id=item_id).first()
+    return jsonify(shop_item_schema.dump(item))
+
+
+@app.route("/add_to_cart", methods=["POST"])
+def add_to_cart():
+    user_id = request.json["user_id"]
+    item_id = request.json["item_id"]
+    date = datetime.date.today()
+    item = ShopItems.query.filter_by(item_id=item_id).first()
+    price = item.price
+    quantity = request.json["quantity"]
+    status = 0
+
+    item_added = Transaction(user_id, item_id, date, price, quantity, status)
+
+    db.session.add(item_added)
+    db.session.commit()
+
+    return jsonify(transaction_schema.dump(item_added))
+
+
+@app.route("/buy_in_cart", methods=["PUT"])
+def buy_in_cart():
+    user_id = request.json["user_id"]
+    item_id = request.json["item_id"]
+    date = request.json["date"]
+    item = ShopItems.query.filter_by(item_id=item_id).first()
+    price = item.price
+    quantity = request.json["quantity"]
+
+    item_in_transaction = Transaction.query.filter_by(user_id=user_id, item_id=item_id, date=date).first()
+
+    user = User.query.get(user_id)
+
+    user.balance = user.balance - int(price) * int(quantity)
+    item.quantity = item.quantity - int(quantity)
+    item_in_transaction.status = 1
+    item_in_transaction.quantity = quantity
+
+    db.session.commit()
+
+    return jsonify({
+        "shop_items": shop_item_schema.dump(item),
+        "transaction": transaction_schema.dump(item_in_transaction),
+        "user": user_schema.dump(user)
+    })
+
+
+@app.route("/search", methods=["GET", "POST"])
+def search():
+    item_search = request.json["item_search"]
+    if len(item_search) == 0:
+        items = ShopItems.query.all()
+    else:
+        search_query = "%{}%".format(item_search)
+        items = ShopItems.query.filter(ShopItems.item_name.like(search_query)).all()
+
+    return jsonify(shop_items_schema.dump(items))
