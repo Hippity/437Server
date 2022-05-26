@@ -4,9 +4,9 @@ from sqlalchemy.dialects.sqlite import BLOB
 
 class PostedItem(db.Model):
 
-    def __init__(self, user_id, item_id, category, item_name, img, description, price, quantity, date):
+    def __init__(self, user_id, category, item_name, img, description, price, quantity, date):
         super(PostedItem, self).__init__(user_id=user_id)
-        super(PostedItem, self).__init__(item_id=item_id)
+        # super(PostedItem, self).__init__(item_id=item_id)
         super(PostedItem, self).__init__(category=category)
         super(PostedItem, self).__init__(item_name=item_name)
         super(PostedItem, self).__init__(img=img)
@@ -16,7 +16,7 @@ class PostedItem(db.Model):
         super(PostedItem, self).__init__(date=date)
 
     user_id = db.Column(db.Integer, primary_key=True)
-    item_id = db.Column(db.Integer, primary_key=True)
+    item_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     category = db.Column(db.String(30))
     item_name = db.Column(db.String(45))
     img = db.Column(db.Text)

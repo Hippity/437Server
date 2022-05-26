@@ -156,13 +156,14 @@ def shop_item():
 def add_to_cart():
     user_id = request.json["user_id"]
     item_id = request.json["item_id"]
-    date = datetime.date.today()
+    date = datetime.datetime.now()
     item = ShopItems.query.filter_by(item_id=item_id).first()
     price = item.price
     quantity = request.json["quantity"]
     status = 0
 
     item_added = Transaction(user_id, item_id, date, price, quantity, status)
+    print(item_added)
 
     db.session.add(item_added)
     db.session.commit()
@@ -207,3 +208,99 @@ def search():
         items = ShopItems.query.filter(ShopItems.item_name.like(search_query)).all()
 
     return jsonify(shop_items_schema.dump(items))
+
+
+# view your (user) posted shop items in your profile page
+@app.route("/your_posted_shop_items", methods=["GET", "POST"])
+def your_posted_shop_items():
+    user_id = request.json["user_id"]
+    your_posted_items = PostedItem.query.filter_by(user_id=user_id).all()
+    return jsonify(posted_items_schema.dump(your_posted_items))
+
+
+# view all posted shop items in all posted items page
+@app.route("/posted_shop_items", methods=["GET", "POST"])
+def posted_shop_items():
+    posted_items = PostedItem.query.all()
+    return jsonify(posted_items_schema.dump(posted_items))
+
+
+# when selecting to view a single item
+@app.route("/posted_shop_item", methods=["GET", "POST"])
+def posted_shop_item():
+    user_id = request.json["user_id"]
+    item_id = request.json["item_id"]
+    posted_item = PostedItem.query.filter_by(user_id=user_id, item_id=item_id).first()
+    return jsonify(posted_item_schema.dump(posted_item))
+
+
+# post a shop item
+@app.route("/add_posted_shop_item", methods=["POST"])
+def add_posted_shop_item():
+    user_id = request.json["user_id"]
+    item_name = request.json["item_name"]
+    category = request.json["category"]
+    img = request.json["img"]
+    description = request.json["description"]
+    price = request.json["price"]
+    quantity = request.json["quantity"]
+    date = datetime.date.today()
+
+    new_posted_item = PostedItem(user_id=user_id, item_name=item_name, category=category, img=img, description=description, price=price, quantity= quantity, date=date)
+
+    db.session.add(new_posted_item)
+    db.session.commit()
+
+    return jsonify(posted_item_schema.dump(new_posted_item))
+
+
+# update a posted shop item
+@app.route("/update_posted_shop_item", methods=["PUT"])
+def update_posted_shop_item():
+    user_id = request.json["user_id"]
+    item_id = request.json["item_id"]
+    item_name = request.json["item_name"]
+    category = request.json["category"]
+    img = request.json["img"]
+    description = request.json["description"]
+    price = request.json["price"]
+    quantity = request.json["quantity"]
+    date = request.json["date"]
+
+    posted_item = PostedItem.query.filter_by(user_id=user_id, item_id=item_id, date=date).first()
+
+    posted_item.item_name = item_name
+    posted_item.category = category
+    posted_item.img = img
+    posted_item.description = description
+    posted_item.price = price
+    posted_item.quantity = quantity
+
+    db.session.commit()
+
+    return jsonify(posted_item_schema.dump(posted_item))
+
+
+# delete a posted shop item
+@app.route("/delete_posted_shop_item", methods=["DELETE"])
+def delete_posted_shop_item():
+    user_id = request.json["user_id"]
+    item_id = request.json["item_id"]
+    date = request.json["date"]
+
+    posted_item_to_delete = PostedItem.query.filter_by(user_id=user_id, item_id=item_id, date=date).first()
+
+    db.session.delete(posted_item_to_delete)
+    db.session.commit()
+
+    return jsonify({"message": "item removed from posted items"})
+
+
+# view all bought items by user in profile
+@app.route("/bought_items", methods=["GET"])
+def bought_items():
+    user_id = request.json["user_id"]
+
+    items_bought = Transaction.query.filter_by(user_id=user_id, status=1).all()
+
+    return jsonify(transactions_schema.dump(items_bought))

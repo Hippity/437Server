@@ -14,7 +14,7 @@ class Transaction(db.Model):
 
     user_id = db.Column(db.Integer, primary_key=True)
     item_id = db.Column(db.Integer, primary_key=True)
-    date = db.Column(db.Date, primary_key=True)
+    date = db.Column(db.DateTime, primary_key=True)
     price = db.Column(db.Float)
     quantity = db.Column(db.Integer)
     status = db.Column(db.Integer)
